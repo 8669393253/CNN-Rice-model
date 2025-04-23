@@ -167,13 +167,3 @@ Additional Notes
 
 Model Performance: The pre-trained model (rice_classifier.h5) achieved 100% accuracy on the test set, as shown in the confusion matrix. However, real-world images may vary in quality, so monitor predictions for consistency.
 Dataset: The model was trained on the Rice Image Dataset, containing 15,000 images per class (75,000 total). Test images are available at kagglehub\datasets\muratkokludataset\rice-image-dataset\versions\1\Rice_Image_Dataset\.
-Troubleshooting:
-If the webpage doesn’t load, ensure the Flask server is running and you’re accessing http://localhost:5000.
-If predictions fail, check terminal logs for errors (e.g., "Prediction error") and verify rice_classifier.h5 is in the project directory.
-If the CSS doesn’t load, confirm style.css is in static/ and the browser cache is cleared (Ctrl+F5).
-
-
-Future Improvements:
-Add confidence scores to predictions for better user feedback.
-Deploy the app to a platform like Vercel or Railway for public access.
-Enhance the UI with additional features like a reset button or image zoom.

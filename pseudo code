@@ -1,0 +1,103 @@
+# Pseudo Code for Rice Classification System
+
+# Backend (Flask Server)
+INITIALIZE Flask app with template folder "templates" and static folder "static"
+CREATE uploads folder if it does not exist
+LOAD pre-trained model from "rice_classifier.h5"
+DEFINE class indices for rice varieties: {Arborio: 0, Basmati: 1, Ipsala: 2, Jasmine: 3, Karacadag: 4}
+
+# Route for Homepage
+FUNCTION handle_root_request():
+    RENDER "index.html" template
+    RETURN rendered HTML to client
+
+# Route for Prediction
+FUNCTION handle_predict_request():
+    IF no file in request:
+        LOG "Error: No file uploaded"
+        RETURN error response with status 400
+    GET file from request
+    IF file name is empty:
+        LOG "Error: No file selected"
+        RETURN error response with status 400
+    GENERATE unique filename using UUID
+    SAVE file to "uploads/" with unique filename
+    TRY:
+        LOAD image from saved path
+        RESIZE image to 128x128 pixels
+        CONVERT image to array
+        NORMALIZE array by dividing by 255
+        EXPAND dimensions of array for model input
+        PREDICT using loaded model on the image array
+        LOG prediction probabilities
+        GET predicted class by finding index of maximum probability
+        MAP index to class name using class indices
+        LOG predicted class
+        DELETE temporary image file
+        RENDER "index.html" template with predicted class
+        RETURN rendered HTML to client
+    CATCH any error:
+        LOG error message
+        DELETE temporary image file
+        RENDER "index.html" template with error message
+        RETURN rendered HTML to client
+
+# Frontend (index.html with JavaScript)
+LOAD webpage at http://localhost:5000
+DISPLAY UI with description, how-to steps, upload area, Upload Image button (disabled), Result button (disabled)
+
+# Drag-and-Drop or Click to Upload
+IF user drags and drops an image into upload area:
+    VALIDATE image is a valid type (JPG/PNG)
+    SET file input to dropped image
+    DISPLAY image preview
+    ENABLE Upload Image button
+IF user clicks upload area:
+    OPEN file picker
+    IF user selects an image:
+        VALIDATE image is a valid type (JPG/PNG)
+        SET file input to selected image
+        DISPLAY image preview
+        ENABLE Upload Image button
+
+# Upload Image Button Click
+IF Upload Image button is clicked:
+    IF no file selected:
+        RETURN
+    DISABLE Upload Image button
+    DISABLE Result button
+    SHOW loader animation
+    CREATE form data with selected file
+    SEND POST request to "/predict" with form data
+    TRY:
+        IF response is not OK:
+            LOG error with status code
+            THROW error
+        GET response as text
+        PARSE response as HTML document
+        EXTRACT prediction from parsed HTML (element with id "prediction-text")
+        STORE prediction in variable latestPrediction
+        LOG extracted prediction
+        ENABLE Result button
+    CATCH any error:
+        LOG error message
+        SET latestPrediction to error message
+        ENABLE Result button
+    FINALLY:
+        HIDE loader animation
+        ENABLE Upload Image button
+
+# Result Button Click
+IF Result button is clicked:
+    IF latestPrediction exists:
+        UPDATE UI to display latestPrediction
+        SHOW result section
+
+# Initial Prediction Display (on Page Load)
+IF page loads with a prediction:
+    LOG initial prediction
+    IF prediction element and result element exist:
+        UPDATE UI to display initial prediction
+        SHOW result section
+    ELSE:
+        LOG error "prediction or result elements not found"

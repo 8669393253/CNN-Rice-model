@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rice Classifier - Premium</title>
+    <link rel="stylesheet" href="static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="theme-toggle">
+        <input type="checkbox" id="theme-switch" onchange="toggleTheme()">
+        <label for="theme-switch">Toggle Theme</label>
+    </div>
+    <div class="container">
+        <!-- Description Section -->
+        <section class="section description">
+            <h1>Rice Classification System</h1>
+            <p>
+                Discover the type of rice with our advanced deep learning model. Powered by MobileNetV2, our system accurately identifies five rice varieties: Arborio, Basmati, Ipsala, Jasmine, and Karacadag. Simply upload an image and get instant results.
+            </p>
+        </section>
+
+        <!-- How-To Section -->
+        <section class="section how-to">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h3>Choose Image</h3>
+                    <p>Select a clear image of rice grains from your device.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h3>Upload</h3>
+                    <p>Drag and drop or click to upload the image to our system.</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h3>Get Prediction</h3>
+                    <p>View the predicted rice type instantly with confidence.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload and Prediction Section -->
+        <section class="section upload">
+            <h2>Upload Your Image</h2>
+            <div class="upload-card">
+                <div class="upload-area" id="upload-area">
+                    <p>Drag & Drop or Click to Upload</p>
+                    <input type="file" id="file-input" name="file" accept="image/*" hidden>
+                </div>
+                <div class="image-preview" id="image-preview" style="display: none;">
+                    <img id="preview-img" src="" alt="Uploaded Image">
+                </div>
+                <button class="upload-btn" id="upload-btn" disabled>predict</button>
+                <div class="loader" id="loader" style="display: none;"></div>
+                <div class="result" id="result" style="display: none;">
+                    <h3>Prediction</h3>
+                    <p id="prediction-text">{{ prediction if prediction else '' }}</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+        }
+
+        // Upload Handling
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const imagePreview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const loader = document.getElementById('loader');
+        const result = document.getElementById('result');
+        const predictionText = document.getElementById('prediction-text');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                fileInput.files = e.dataTransfer.files;
+                previewImage(file);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                previewImage(fileInput.files[0]);
+            }
+        });
+
+        function previewImage(file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                previewImg.src = reader.result;
+                imagePreview.style.display = 'block';
+                uploadBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!fileInput.files.length) return;
+            uploadBtn.disabled = true;
+            loader.style.display = 'block';
+            result.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    console.error('Fetch error:', response.status, response.statusText);
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+                const data = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const prediction = doc.querySelector('#prediction-text')?.textContent;
+                predictionText.textContent = prediction || 'No prediction received';
+                result.style.display = 'block';
+            } catch (error) {
+                console.error('Prediction error:', error);
+                predictionText.textContent = `Error: ${error.message}`;
+                result.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // Display initial prediction if present
+        {% if prediction %}
+            predictionText.textContent = '{{ prediction }}';
+            result.style.display = 'block';
+        {% endif %}
+    </script>
+</body>
+</html>
